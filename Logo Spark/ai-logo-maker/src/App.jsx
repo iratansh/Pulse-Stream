@@ -7,6 +7,7 @@ import Pricing from './Pricing';
 import LogoIdeas from './LogoIdeas';
 import Blog from './Blog';
 import Article from './Article';
+import LoginRegister from './LoginRegister';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/logo-ideas" element={<LogoIdeas />} /> 
         <Route path="/blog" element={<Blog />} /> 
         <Route path="/blog/article/:slug" element={<Article />} />
+        <Route path="/login" element={<LoginRegister />} />
       </Routes>
     </Router>
   )

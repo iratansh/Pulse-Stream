@@ -1,0 +1,17 @@
+.auth-form input {
+    transition: all 0.3s ease;
+  }
+  
+  .auth-form input:focus {
+    border-color: #3b82f6 !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .auth-form button[type="submit"] {
+    transition: background 0.3s ease;
+  }
+  
+  .auth-form button[type="submit"]:hover {
+    background: #2563eb;
+  }

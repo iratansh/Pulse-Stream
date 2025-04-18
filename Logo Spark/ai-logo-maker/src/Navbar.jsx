@@ -117,7 +117,7 @@ export default function NavigationBar() {
             onMouseOut={(e) =>
               (e.currentTarget.style.backgroundColor = "#FF4081")
             }
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/login")}
           >
             Register
           </Nav.Link>
