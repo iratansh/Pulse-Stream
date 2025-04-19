@@ -2,8 +2,29 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { FaAws, FaCoffee, FaHackerNews, FaLightbulb, FaMagic } from 'react-icons/fa';
 import "./LandingPage.css";
+import { useNavigate } from "react-router-dom";
 
 export default function LogoMaker() {
+    const navigate = useNavigate();
+
+    async function generateLogo(input) {
+        try {
+            const response = await fetch('http://localhost:5080/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ input }),
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error generating logo:', error);
+            return null;
+        }
+    }
+
+
     return (
         <div className="hero-wrapper">
             <Navbar />
@@ -46,6 +67,8 @@ export default function LogoMaker() {
                                 fontSize: '1.1rem',
                                 padding: '1rem 2rem'
                             }}
+
+                            onClick={() => navigate('/dashboard')}
                         >
                             Generate Logo
                         </button>

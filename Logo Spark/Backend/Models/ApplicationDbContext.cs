@@ -1,4 +1,5 @@
-// Models/ApplicationDbContext.cs
+//ApplicationDbContext.cs
+
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,19 @@ namespace LogoSpark.Models
             : base(options)
         {
         }
-        
-        // Add any additional DbSets for other entities
+
+        // Add any additional DbSets for other entities here, like:
+        // public DbSet<YourModel> YourModels { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Make email optional (not recommended unless you have a good reason)
+            builder.Entity<ApplicationUser>(entity =>
+            {
+                entity.Property(u => u.Email).IsRequired(false);
+            });
+        }
     }
 }

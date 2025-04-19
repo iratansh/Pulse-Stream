@@ -8,6 +8,7 @@ import LogoIdeas from './LogoIdeas';
 import Blog from './Blog';
 import Article from './Article';
 import LoginRegister from './LoginRegister';
+import Dashboard from './Dashboard';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/blog" element={<Blog />} /> 
         <Route path="/blog/article/:slug" element={<Article />} />
         <Route path="/login" element={<LoginRegister />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   )

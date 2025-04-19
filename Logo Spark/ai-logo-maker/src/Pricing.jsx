@@ -134,35 +134,6 @@ export default function Pricing() {
                 Start Free Trial
               </button>
             </div>
-
-            {/* Enterprise Tier */}
-            <div 
-              className={`example-item ${selectedPlan === 'enterprise' ? 'plan-selected' : ''}`}
-              style={{ textAlign: 'center', cursor: 'pointer' }}
-              onClick={() => handlePlanClick('enterprise')}
-            >
-              <div className="icon-container" style={{ 
-                background: '#4b5563',
-                margin: '0 auto 1.5rem',
-                width: '80px',
-                height: '80px'
-              }}>
-                <FaBuilding style={{ color: 'white', fontSize: '2rem' }} />
-              </div>
-              <h3 className="section-subtitle">Enterprise</h3>
-              <div style={{ fontSize: '2.5rem', fontWeight: '700', margin: '1rem 0' }}>
-                Custom
-              </div>
-              <ul style={{ textAlign: 'left', padding: '0 1.5rem' }}>
-                <li className="description"><FaCheckCircle style={{ color: '#3b82f6', marginRight: '0.5rem' }} />Team Collaboration</li>
-                <li className="description"><FaCheckCircle style={{ color: '#3b82f6', marginRight: '0.5rem' }} />Custom Templates</li>
-                <li className="description"><FaCheckCircle style={{ color: '#3b82f6', marginRight: '0.5rem' }} />Dedicated Support</li>
-                <li className="description"><FaCheckCircle style={{ color: '#3b82f6', marginRight: '0.5rem' }} />API Access</li>
-              </ul>
-              <button className="primary-button" style={{ marginTop: '2rem', width: '100%' }}>
-                Contact Sales
-              </button>
-            </div>
           </div>
 
           {/* Add to CSS */}

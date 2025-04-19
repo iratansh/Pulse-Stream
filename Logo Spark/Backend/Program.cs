@@ -51,6 +51,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

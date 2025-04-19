@@ -16,6 +16,9 @@ export default function AuthPage() {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+
+  const Navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
@@ -33,46 +36,74 @@ export default function AuthPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setApiError(''); // Clear previous API errors
+    
     if (validateForm()) {
       console.log('Form data:', formData);
+    
+    const trimmedFormData = {
+        ...formData,
+        username: formData.username.trim() // Remove whitespace
+      };
 
       if (isLogin) {
-
         // Handle login
         console.log('Logging in...');
-        const response = await axios.post('http://localhost:5173/api/auth/login', {
-            username: formData.username,
+        try {
+          const response = await axios.post('http://localhost:5001/api/auth/login', {
+            username: trimmedFormData.username,
             password: formData.password
-        });
-
-        if (response.data.token) {
+          });
+          console.log('Login successful:', response.data);
+          
+          // Handle successful login 
           localStorage.setItem('token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
+          
+          Navigate('/logo-maker'); // Redirect to logo maker page
+          
+        } catch (error) {
+          console.error('Login error:', error);
+          // Display the error message from the API
+          if (error.response && error.response.data && error.response.data.message) {
+            setApiError(error.response.data.message);
+          } else {
+            setApiError('An error occurred during login. Please try again.');
+          }
         }
-
-        console.log(response.data);
-
       } else {
         // Handle registration
         console.log('Registering...');
-        const firstName = formData.name.split(' ')[0];
-        const lastName = formData.name.split(' ')[1];
-        const response = await axios.post('http://localhost:5173/api/auth/register', {
-            username: formData.username,
-            firstName: firstName,
-            lastName: lastName,
+        try {
+          const response = await axios.post('http://localhost:5001/api/auth/register', {
+            username: trimmedFormData.username,
+            name: formData.name,
             password: formData.password
-        });
+          });
+          console.log('Registration successful:', response.data);
+          
+          // Show success message 
+          setApiError(''); // Clear any previous errors
+          alert('Registration successful!');
 
-        if (response.data.token) {
+          // Handle successful register 
           localStorage.setItem('token', response.data.token);
           localStorage.setItem('user', JSON.stringify(response.data.user));
+          window.dispatchEvent(new Event('userStateChanged'));
+          
+          Navigate('/logo-maker'); // Redirect to logo maker page
+        } catch (error) {
+          console.error('Registration error:', error);
+          // Display the error message from the API
+          if (error.response && error.response.data && error.response.data.message) {
+            setApiError(error.response.data.message);
+          } else {
+            setApiError('An error occurred during registration. Please try again.');
+          }
         }
-
-        console.log(response.data);
       }
     }
-  };
+  }
 
   return (
     <div className="hero-wrapper">
@@ -89,6 +120,20 @@ export default function AuthPage() {
               </p>
             </div>
 
+            {/* Error message display */}
+            {apiError && (
+              <div style={{ 
+                backgroundColor: '#fee2e2', 
+                color: '#ef4444', 
+                padding: '0.75rem', 
+                borderRadius: '8px',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}>
+                {apiError}
+              </div>
+            )}
+
             {/* Auth Toggle */}
             <div style={{ 
               display: 'grid', 
@@ -97,7 +142,10 @@ export default function AuthPage() {
               marginBottom: '2rem'
             }}>
               <button
-                onClick={() => setIsLogin(true)}
+                onClick={() => {
+                  setIsLogin(true);
+                  setApiError(''); // Clear errors when switching forms
+                }}
                 style={{
                   background: isLogin ? '#3b82f6' : '#f1f5f9',
                   color: isLogin ? 'white' : '#64748b',
@@ -112,7 +160,10 @@ export default function AuthPage() {
                 Login
               </button>
               <button
-                onClick={() => setIsLogin(false)}
+                onClick={() => {
+                  setIsLogin(false);
+                  setApiError(''); // Clear errors when switching forms
+                }}
                 style={{
                   background: !isLogin ? '#3b82f6' : '#f1f5f9',
                   color: !isLogin ? 'white' : '#64748b',

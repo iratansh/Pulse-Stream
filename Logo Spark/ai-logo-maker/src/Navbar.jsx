@@ -1,11 +1,63 @@
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Container from "react-bootstrap/Container";
+import NavDropdown from "react-bootstrap/NavDropdown";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export default function NavigationBar() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Check user status
+  useEffect(() => {
+    const checkUserStatus = () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setCurrentUser(JSON.parse(storedUser));
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        setCurrentUser(null);
+      }
+    };
+
+    // Check on mount
+    checkUserStatus();
+
+    // Setup storage event listener to detect changes from other tabs
+    const handleStorageChange = (e) => {
+      if (e.key === 'user' || e.key === 'token') {
+        checkUserStatus();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    const handleUserStateChange = () => {
+      checkUserStatus();
+    };
+  
+    window.addEventListener('userStateChanged', handleUserStateChange);
+  
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userStateChanged', handleUserStateChange);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    // Clear user data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    // Redirect to landing page
+    navigate('/');
+  };
 
   return (
     <Navbar
@@ -31,7 +83,6 @@ export default function NavigationBar() {
 
         <Nav className="mx-auto d-flex align-items-center">
           <Nav.Link
-            on
             className="mx-2"
             style={{
               color: "#E8EAF6",
@@ -89,38 +140,60 @@ export default function NavigationBar() {
         </Nav>
 
         <Nav>
-          <Nav.Link
-            style={{
-              color: "#E8EAF6",
-              marginRight: "15px",
-              fontWeight: "500",
-              transition: "color 0.2s ease",
-            }}
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </Nav.Link>
-          <Nav.Link
-            style={{
-              backgroundColor: "#FF4081",
-              color: "white",
-              padding: "8px 20px",
-              borderRadius: "4px",
-              fontWeight: "600",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              transition: "all 0.2s ease",
-            }}
-            className="d-flex align-items-center justify-content-center"
-            onMouseOver={(e) =>
-              (e.currentTarget.style.backgroundColor = "#F50057")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.backgroundColor = "#FF4081")
-            }
-            onClick={() => navigate("/login")}
-          >
-            Register
-          </Nav.Link>
+          {currentUser ? (
+            <NavDropdown 
+              title={
+                <span style={{ color: "#E8EAF6" }}>
+                  {currentUser.name || currentUser.username}
+                </span>
+              } 
+              id="user-dropdown"
+              align="end"
+              style={{
+                color: "#E8EAF6",
+                fontWeight: "500",
+              }}
+            >
+              <NavDropdown.Item onClick={() => navigate("/saved-logos")}>Saved</NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item onClick={handleLogout}>Logout</NavDropdown.Item>
+            </NavDropdown>
+          ) : (
+            <>
+              <Nav.Link
+                style={{
+                  color: "#E8EAF6",
+                  marginRight: "15px",
+                  fontWeight: "500",
+                  transition: "color 0.2s ease",
+                }}
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </Nav.Link>
+              <Nav.Link
+                style={{
+                  backgroundColor: "#FF4081",
+                  color: "white",
+                  padding: "8px 20px",
+                  borderRadius: "4px",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  transition: "all 0.2s ease",
+                }}
+                className="d-flex align-items-center justify-content-center"
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#F50057")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#FF4081")
+                }
+                onClick={() => navigate("/login")}
+              >
+                Register
+              </Nav.Link>
+            </>
+          )}
         </Nav>
       </Container>
     </Navbar>
