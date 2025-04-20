@@ -1,6 +1,9 @@
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { FaBomb, FaSquarespace, FaWordpress, FaGlobe } from "react-icons/fa";
+import arrowImage from "./assets/generated_logos/arrow.png";
+import balloonImage from "./assets/generated_logos/balloon.png";
+import explosionImage from "./assets/generated_logos/explosion.png";
+import someStuffImage from "./assets/generated_logos/some_stuff.png";
 import "./LandingPage.css";
 
 export default function Documentation() {
@@ -29,10 +32,10 @@ export default function Documentation() {
                                     height: '200px',
                                     margin: index % 2 === 0 ? '0 2rem 0 0' : '0 0 0 2rem'
                                 }}>
-                                    {index === 0 && <FaBomb className="example-icon" />}
-                                    {index === 1 && <FaGlobe className="example-icon" />}
-                                    {index === 2 && <FaSquarespace className="example-icon" />}
-                                    {index === 3 && <FaWordpress className="example-icon" />}
+                                    {index === 0 && <img src={ arrowImage } alt="Arrow Image" className="example-icon"/> }
+                                    {index === 1 && <img src={ balloonImage } alt="Balloon Image" className="example-icon"/> }
+                                    {index === 2 && <img src={ explosionImage } alt="Explosion Image" className="example-icon"/> }
+                                    {index === 3 && <img src={ someStuffImage } alt="Some Stuff Image" className="example-icon"/> }
                                 </div>
 
                                 {/* Text Content */}

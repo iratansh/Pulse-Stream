@@ -77,6 +77,7 @@ export default function NavigationBar() {
             fontSize: "1.5rem",
             textShadow: "1px 1px 2px rgba(0,0,0,0.2)",
           }}
+          onClick={() => navigate("/")}
         >
           Logo Spark
         </Navbar.Brand>

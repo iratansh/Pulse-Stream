@@ -48,7 +48,7 @@ class LogoGenerator:
         self.pipe = DiffusionPipeline.from_pretrained(
             self.model_id,
             torch_dtype=self.dtype if self.device != "cpu" else torch.float32,
-            safety_checker=None  # Faster generation
+            safety_checker=None  # For Faster generation
         )
         self.pipe.to(self.device)
         
@@ -152,8 +152,6 @@ class LogoGenerator:
         return all_images
     
 
-
-# Example usage
 if __name__ == "__main__":
     logo_gen = LogoGenerator()
     logo_gen.generate_logos("Sunshine")

@@ -136,7 +136,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          {/* Add to CSS */}
+          {/* Add some styling to highlight the selected plan */}
           <style jsx>{`
             .plan-selected {
               transform: translateY(-10px);
