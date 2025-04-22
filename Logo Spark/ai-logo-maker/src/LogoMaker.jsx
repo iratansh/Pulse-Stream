@@ -3,27 +3,31 @@ import Footer from "./Footer";
 import { FaAws, FaCoffee, FaHackerNews, FaLightbulb, FaMagic } from 'react-icons/fa';
 import "./LandingPage.css";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function LogoMaker() {
     const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
 
-    async function generateLogo(input) {
+    async function generateFirstLogo(input) {
         try {
+            setIsLoading(true);
             const response = await fetch('http://localhost:5080/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ input }),
+                body: JSON.stringify({ uInput: input }), 
             });
             const data = await response.json();
+            setIsLoading(false);
             return data;
         } catch (error) {
             console.error('Error generating logo:', error);
+            setIsLoading(false);
             return null;
         }
     }
-
 
     return (
         <div className="hero-wrapper">
@@ -67,10 +71,30 @@ export default function LogoMaker() {
                                 fontSize: '1.1rem',
                                 padding: '1rem 2rem'
                             }}
-
-                            onClick={() => navigate('/dashboard')}
+                            disabled={isLoading}
+                            onClick={async () => {
+                                const input = document.getElementById('idea-input').value;
+                                if (!input.trim()) {
+                                    alert("Please enter a company name");
+                                    return;
+                                }
+                                
+                                const initialData = await generateFirstLogo(input);
+                                if (initialData && initialData.status === "success") {
+                                    console.log('Generated First Logo:', initialData.logo);
+                                    navigate('/dashboard', { 
+                                        state: { 
+                                            firstLogo: initialData.logo,
+                                            taskId: initialData.task_id,
+                                            companyName: input
+                                        }
+                                    });
+                                } else {
+                                    alert("Error generating logo. Please try again.");
+                                }
+                            }}
                         >
-                            Generate Logo
+                            {isLoading ? "Generating..." : "Generate Logos"}
                         </button>
                     </div>
                 </section>

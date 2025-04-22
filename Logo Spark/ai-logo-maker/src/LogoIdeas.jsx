@@ -14,6 +14,12 @@ import {
   FaTshirt,
   FaBook,
   FaPlane,
+  FaChartLine,
+  FaDumbbell,
+  FaHome,
+  FaFilm,
+  FaShoppingCart,
+  FaCar
 } from "react-icons/fa";
 import "./LandingPage.css";
 
@@ -63,6 +69,36 @@ const industries = [
     name: "Travel",
     icon: <FaPlane />,
     logos: ["Wanderlust", "Horizon Seekers", "Nomad Life"],
+  },
+  {
+    name: "Finance & Banking",
+    icon: <FaChartLine />,
+    logos: ["Secure Capital", "Blue Trust Bank", "Wealth Harbor"],
+  },
+  {
+    name: "Sports & Fitness",
+    icon: <FaDumbbell />,
+    logos: ["Peak Performance", "Dynamic Athletics", "Endurance Zone"],
+  },
+  {
+    name: "Real Estate",
+    icon: <FaHome />,
+    logos: ["Urban Dwellings", "Prime Properties", "Horizon Homes"],
+  },
+  {
+    name: "Entertainment",
+    icon: <FaFilm />,
+    logos: ["Stellar Studios", "Vision Media", "Spotlight Entertainment"],
+  },
+  {
+    name: "E-commerce",
+    icon: <FaShoppingCart />,
+    logos: ["Swift Cart", "Market Maven", "Shop Sphere"],
+  },
+  {
+    name: "Automotive",
+    icon: <FaCar />,
+    logos: ["Velocity Motors", "Chrome Drive", "Precision Auto"],
   },
 ];
 
@@ -197,7 +233,7 @@ export default function LogoIdeas() {
           {filteredIndustries.length === 0 && (
             <div
               className="text-container"
-              style={{ marginTop: "2rem", textAlign }}
+              style={{ marginTop: "2rem", textAlign: "center" }}
             >
               <p
                 className="description"

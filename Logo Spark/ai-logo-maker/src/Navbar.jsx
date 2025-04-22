@@ -76,6 +76,7 @@ export default function NavigationBar() {
             fontWeight: "700",
             fontSize: "1.5rem",
             textShadow: "1px 1px 2px rgba(0,0,0,0.2)",
+            cursor: "pointer",
           }}
           onClick={() => navigate("/")}
         >

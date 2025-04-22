@@ -29,9 +29,9 @@ A strong brand identity requires consistency. Logo Spark offers logo files optim
 As your business grows, so do your branding needs. Logo Spark provides scalable design solutions, making it easy to create additional visual assets like icons, banners, and brand guidelines.
 
 ### Final Thoughts
-A memorable logo is the foundation of your brand identity. With Logo Spark, you have the power to create a logo that reflects your brand’s values and vision. Ready to elevate your brand presence? Start designing with Logo Spark today and experience how AI-powered creativity can give your brand a competitive edge and a memorable identity.
+A memorable logo is the foundation of your brand identity. With Logo Spark, you have the power to create a logo that reflects your brand's values and vision. Ready to elevate your brand presence? Start designing with Logo Spark today and experience how AI-powered creativity can give your brand a competitive edge and a memorable identity.
 
-> Transform your brand identity in minutes. Visit [Logo Spark](#) and start your journey now!
+> Transform your brand identity in minutes. Visit [Logo Spark](/) and start your journey now!
 
 `,
     category: "Logo Spark",
@@ -70,7 +70,7 @@ Create a user-friendly website that reflects your brand identity. Optimize it fo
 Engage with mentors, join industry groups, and attend networking events to gain insights and form valuable connections. Partnerships can open new opportunities and enhance your business growth.
 
 ### 9. **Monitor and Adjust**
-Track your progress using key performance indicators (KPIs). Regularly assess what’s working and make necessary adjustments. Flexibility and responsiveness are crucial for success.
+Track your progress using key performance indicators (KPIs). Regularly assess what's working and make necessary adjustments. Flexibility and responsiveness are crucial for success.
 
 ### Final Thoughts
 Launching a startup requires dedication, but with the right plan and resources, your business can thrive. Take it one step at a time, stay adaptable, and keep your vision in mind. Ready to take the first step? Start building your startup today!
@@ -354,101 +354,9 @@ The digital marketing landscape will undoubtedly continue to evolve throughout 2
 
 export default function Article() {
   const { slug } = useParams();
-  const article = articleContent[slug] || articleContent[0];
+  const article = articleContent[slug] || articleContent[Object.keys(articleContent)[0]];
 
-  const formatContent = (text) => {
-    return text.split("\n").map((paragraph, index) => {
-      if (paragraph.startsWith("## ")) {
-        return (
-          <h2
-            key={index}
-            className="section-subtitle"
-            style={{ margin: "2rem 0 1rem", color: "#1e293b" }}
-          >
-            {paragraph.replace("## ", "")}
-          </h2>
-        );
-      }
-      if (paragraph.startsWith("### ")) {
-        return (
-          <h3
-            key={index}
-            className="description"
-            style={{
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              margin: "1.5rem 0 0.5rem",
-              color: "#1e293b",
-            }}
-          >
-            {paragraph.replace("### ", "")}
-          </h3>
-        );
-      }
-      if (paragraph.startsWith("* ")) {
-        return (
-          <p
-            key={index}
-            className="description"
-            style={{
-              marginLeft: "1rem",
-              fontStyle: "italic",
-              color: "#64748b",
-            }}
-          >
-            {paragraph.replace("* ", "")}
-          </p>
-        );
-      }
-      if (paragraph.startsWith("> ")) {
-        return (
-          <blockquote
-            key={index}
-            className="description"
-            style={{
-              borderLeft: "4px solid #3b82f6",
-              paddingLeft: "1rem",
-              margin: "1.5rem 0",
-              color: "#475569",
-            }}
-          >
-            {paragraph.replace("> ", "")}
-          </blockquote>
-        );
-      }
-      if (paragraph.startsWith("1. ")) {
-        return (
-          <ol
-            key={index}
-            className="description"
-            style={{ paddingLeft: "2rem", margin: "1rem 0" }}
-          >
-            {paragraph.split("\n").map((item, idx) => (
-              <li
-                key={idx}
-                style={{ marginBottom: "0.5rem", color: "#64748b" }}
-              >
-                {item.replace(/^\d+\.\s*/, "")}
-              </li>
-            ))}
-          </ol>
-        );
-      }
-      if (paragraph === "") {
-        return <br key={index} />;
-      }
-      return (
-        <p
-          key={index}
-          className="description"
-          style={{ margin: "1rem 0", color: "#64748b" }}
-        >
-          {paragraph}
-        </p>
-      );
-    });
-  };
-
+  // Create a proper rendering of the article content using the additional CSS classes
   return (
     <div className="hero-wrapper">
       <Navbar />
@@ -502,13 +410,61 @@ export default function Article() {
               <FaCalendarAlt />
               <span className="description">{article.date}</span>
             </div>
-            <div style={{ lineHeight: "1.8", fontSize: "1.1rem" }}>
-              {formatContent(article.content)}
-            </div>
+            
+            {/* Use dangerouslySetInnerHTML for simple markdown conversion */}
+            <div 
+              className="article-content"
+              dangerouslySetInnerHTML={{ __html: convertMarkdownToHtml(article.content) }}
+            />
           </div>
         </section>
       </main>
       <Footer />
     </div>
   );
+}
+
+// Function to convert markdown to HTML
+function convertMarkdownToHtml(markdown) {
+  // Heading conversions
+  let html = markdown
+    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+    .replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+  
+  // Bold text
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Italic text
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // Blockquotes
+  html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+  
+  // Lists 
+  html = html.replace(/^- (.*$)/gm, '<li>$1</li>');
+  
+  // Convert consecutive list items into a list
+  html = html.replace(/(<li>.*<\/li>\n)+/g, function(match) {
+    return '<ul>' + match + '</ul>';
+  });
+  
+  // Links
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+  
+  // Convert line breaks to paragraphs for text that isn't inside other elements
+  const paragraphs = html.split('\n\n');
+  html = paragraphs.map(paragraph => {
+    // Skip paragraphs that are already wrapped in HTML tags
+    if (paragraph.trim().startsWith('<') && paragraph.trim().endsWith('>')) {
+      return paragraph;
+    }
+    if (paragraph.trim() === '') {
+      return '';
+    }
+    return `<p>${paragraph}</p>`;
+  }).join('\n');
+  
+  return html;
 }

@@ -10,7 +10,7 @@ const articles = [
     title: "5 Ways Logo Spark Transforms Brand Identity",
     excerpt: "Discover how AI-powered logo design can elevate your brand presence in competitive markets...",
     category: "Logo Spark",
-    date: "March 15, 2024",
+    date: "March 15, 2025",
     slug: "logo-spark-brand-identity",
     readTime: "5 min"
   },
@@ -19,7 +19,7 @@ const articles = [
     title: "Essential Steps for Launching Your Startup",
     excerpt: "From business registration to brand development - a comprehensive guide for new entrepreneurs...",
     category: "Starting a Business",
-    date: "March 12, 2024",
+    date: "March 12, 2025",
     slug: "launching-startup-guide",
     readTime: "8 min"
   },
@@ -28,7 +28,7 @@ const articles = [
     title: "Digital Marketing Strategies for 2024",
     excerpt: "Master social media and SEO trends with our expert analysis of emerging marketing technologies...",
     category: "Marketing",
-    date: "March 10, 2024",
+    date: "March 10, 2025",
     slug: "2024-marketing-strategies",
     readTime: "12 min"
   }
