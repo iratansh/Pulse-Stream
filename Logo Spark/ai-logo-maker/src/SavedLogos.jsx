@@ -1,26 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import {
-  FaTrash, FaDownload, FaSave, FaCoffee, 
-  FaRocket, FaLeaf, FaGem, FaDragon, 
+  FaTrash, FaDownload, FaSave, FaCoffee,
+  FaRocket, FaLeaf, FaGem, FaDragon,
   FaFeather, FaApple, FaAndroid
 } from 'react-icons/fa';
 import "./LandingPage.css";
 
-const initialLogos = [
-  { id: 1, icon: FaCoffee },
-  { id: 2, icon: FaRocket },
-  { id: 3, icon: FaLeaf },
-  { id: 4, icon: FaGem },
-  { id: 5, icon: FaDragon },
-  { id: 6, icon: FaFeather },
-  { id: 7, icon: FaApple },
-  { id: 8, icon: FaAndroid },
-];
-
 export default function SavedLogos() {
-  const [logos, setLogos] = useState(initialLogos);
+  const [logos, setLogos] = useState([]);
   const [selectedLogo, setSelectedLogo] = useState(null);
 
   const handleLogoClick = (id) => {
@@ -37,14 +26,30 @@ export default function SavedLogos() {
     setSelectedLogo(null);
   };
 
+  useEffect(() => {
+    const fetchLogos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/saving/saved-images', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setLogos(data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    fetchLogos();
+  }, []);
+
   return (
     <div className="hero-wrapper">
       <Navbar />
       <main className="content-container" style={{ padding: '4rem 0' }}>
         <section style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '2rem',
             padding: '0 20px'
@@ -57,36 +62,27 @@ export default function SavedLogos() {
             </p>
           </div>
 
-          <div style={{ 
+          <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: '2rem',
             padding: '0 20px'
           }}>
             {logos.map((logo) => (
-              <div 
+              <div
                 key={logo.id}
-                style={{ 
+                style={{
                   position: 'relative',
                   cursor: 'pointer',
                   transition: 'transform 0.3s ease'
                 }}
                 onClick={() => handleLogoClick(logo.id)}
               >
-                <div className="example-item" style={{ 
-                  padding: '2rem',
-                  textAlign: 'center',
-                  height: '250px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <logo.icon style={{ 
-                    fontSize: '5rem', 
-                    color: '#3b82f6',
-                    transition: 'transform 0.3s ease'
-                  }} />
-                </div>
+                <img
+                  src={logo.imagePath}
+                  alt={logo.name}
+                  style={{ width: '100%', height: '250px', objectFit: 'contain' }}
+                />
 
                 {selectedLogo === logo.id && (
                   <div style={{

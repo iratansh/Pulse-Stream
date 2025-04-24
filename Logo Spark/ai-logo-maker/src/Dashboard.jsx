@@ -1,12 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import LoadingIndicator from "./LoadingIndicator";
 import Toast from "./Toast";
-import { 
-  FaDownload, FaSave, FaSyncAlt, FaSpinner, FaExclamationTriangle
-} from 'react-icons/fa';
+import {
+  FaDownload,
+  FaSave,
+  FaSyncAlt,
+  FaSpinner,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 import "./LandingPage.css";
 import { streamLogos } from "./logoAPI";
 
@@ -24,7 +28,7 @@ export default function Dashboard() {
   const streamControllerRef = useRef(null);
   const gridRef = useRef(null);
   const abortRequestedRef = useRef(false); // Ref to track if abortion was requested
-  
+
   useEffect(() => {
     // Initialize with the first logo if available
     if (location.state?.firstLogo) {
@@ -32,27 +36,27 @@ export default function Dashboard() {
         {
           id: 0,
           path: location.state.firstLogo,
-          isSelected: false
-        }
+          isSelected: false,
+        },
       ]);
       setInitializing(false);
     } else {
       // If we don't have a first logo, redirect back to logo maker
-      navigate('/logo-maker');
+      navigate("/logo-maker");
       return;
     }
-    
+
     // Start streaming additional logos if we have a task ID
     if (location.state?.taskId && location.state?.companyName) {
       startLogoStream(location.state.taskId, location.state.companyName);
     } else {
       setLoading(false);
     }
-    
+
     // Cleanup function to abort logo generation when unmounting
     return () => {
       if (streamControllerRef.current) {
-        abortRequestedRef.current = true; 
+        abortRequestedRef.current = true;
         streamControllerRef.current.abort();
         streamControllerRef.current = null;
       }
@@ -65,29 +69,29 @@ export default function Dashboard() {
     setAborting(false);
     abortRequestedRef.current = false;
     setLoading(true);
-    
+
     streamControllerRef.current = streamLogos(
       taskId,
       companyName,
       (data) => {
         if (abortRequestedRef.current) {
-          console.log('Ignoring new logo after abortion was requested');
+          console.log("Ignoring new logo after abortion was requested");
           return;
         }
-        
+
         // Add new logo
-        setLogos(prevLogos => [
+        setLogos((prevLogos) => [
           ...prevLogos,
           {
-            id: data.index + 1, 
+            id: data.index + 1,
             path: data.logo,
-            isSelected: false
-          }
+            isSelected: false,
+          },
         ]);
-        
+
         // Update progress
-        setGenerationProgress(prev => prev + 1);
-        
+        setGenerationProgress((prev) => prev + 1);
+
         // Show toast notification
         setToast(`Logo ${data.index + 1} generated successfully!`);
       },
@@ -99,18 +103,18 @@ export default function Dashboard() {
       },
       // On error
       (error) => {
-        console.error('Error streaming logos:', error);
+        console.error("Error streaming logos:", error);
         setLoading(false);
         setAborting(false);
         setToast(`Error generating logos: ${error.message}`);
       },
       // On abort
       (abortData) => {
-        console.log('Generation aborted:', abortData);
+        console.log("Generation aborted:", abortData);
         setLoading(false);
         setAborted(true);
         setAborting(false);
-        setTotalLogos(Math.max(logos.length, abortData.total_generated + 1)); 
+        setTotalLogos(Math.max(logos.length, abortData.total_generated + 1));
         setToast("Logo generation was cancelled");
       }
     );
@@ -119,8 +123,8 @@ export default function Dashboard() {
   // Function to handle abortion
   const handleAbort = () => {
     if (streamControllerRef.current && !abortRequestedRef.current) {
-      abortRequestedRef.current = true; 
-      setAborting(true); 
+      abortRequestedRef.current = true;
+      setAborting(true);
       setToast("Cancelling generation...");
       streamControllerRef.current.abort(); // Request abortion
     }
@@ -129,57 +133,85 @@ export default function Dashboard() {
   useEffect(() => {
     // Add event listener to handle clicks outside of logos
     const handleClickOutside = (event) => {
-      if (gridRef.current && gridRef.current.contains(event.target) && 
-          event.target === gridRef.current) {
+      if (
+        gridRef.current &&
+        gridRef.current.contains(event.target) &&
+        event.target === gridRef.current
+      ) {
         // Close all menus
-        setLogos(prevLogos => 
-          prevLogos.map(logo => ({
+        setLogos((prevLogos) =>
+          prevLogos.map((logo) => ({
             ...logo,
-            isSelected: false
+            isSelected: false,
           }))
         );
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const handleLogoClick = (id) => {
-    setLogos(logos.map(logo => ({
-      ...logo,
-      isSelected: logo.id === id ? !logo.isSelected : false
-    })));
+    setLogos(
+      logos.map((logo) => ({
+        ...logo,
+        isSelected: logo.id === id ? !logo.isSelected : false,
+      }))
+    );
   };
 
   const handleDownload = (e, id) => {
     e.stopPropagation();
-    
+
     // Find the logo with the given ID
-    const logo = logos.find(logo => logo.id === id);
+    const logo = logos.find((logo) => logo.id === id);
     if (!logo) return;
-    
+
     // Create a temporary link element
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = logo.path;
     link.download = `logo_${id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Show toast
     setToast("Logo downloaded successfully!");
   };
 
-  const handleSave = (e, id) => {
-    e.stopPropagation(); 
-    // TODO: Implement saving to database
+  const handleSave = async (e, id) => {
+    e.stopPropagation();
+    const logo = logos.find((logo) => logo.id === id);
+    if (!logo) return;
 
-    console.log('Saving logo to database', id);
-    setToast("Logo saved to your account!");
+    const name = window.prompt("Enter a name for this logo:");
+    if (!name) {
+      setToast("Name is required");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/saving/save-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          ImagePath: logo.path,
+          Name: name,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save logo");
+      setToast("Logo saved to your account!");
+    } catch (error) {
+      setToast(error.message);
+    }
   };
 
   // Calculate the number of placeholders to show
@@ -188,17 +220,19 @@ export default function Dashboard() {
     if (aborted || !loading) {
       return 0; // No placeholders if aborted or loading completed
     }
-    
+
     // Calculate remaining logos to generate
     return Math.max(0, totalLogos - logos.length);
   };
-  
+
   // Create placeholders based on calculation
-  const logoPlaceholders = Array(getPlaceholderCount()).fill(null).map((_, i) => ({
-    id: `placeholder-${i}`,
-    isPlaceholder: true
-  }));
-  
+  const logoPlaceholders = Array(getPlaceholderCount())
+    .fill(null)
+    .map((_, i) => ({
+      id: `placeholder-${i}`,
+      isPlaceholder: true,
+    }));
+
   // Combine real logos with placeholders
   const displayLogos = [...logos, ...logoPlaceholders];
 
@@ -207,7 +241,7 @@ export default function Dashboard() {
     return (
       <div className="hero-wrapper">
         <Navbar />
-        <main className="content-container" style={{ padding: '4rem 0' }}>
+        <main className="content-container" style={{ padding: "4rem 0" }}>
           <LoadingIndicator message="Initializing your dashboard..." />
         </main>
         <Footer />
@@ -218,63 +252,93 @@ export default function Dashboard() {
   return (
     <div className="hero-wrapper">
       <Navbar />
-      <main className="content-container" style={{ padding: '4rem 0' }}>
-        <section style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '2rem',
-            padding: '0 20px'
-          }}>
+      <main className="content-container" style={{ padding: "4rem 0" }}>
+        <section style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "2rem",
+              padding: "0 20px",
+            }}
+          >
             <div>
-              <h1 className="heading" style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>
+              <h1
+                className="heading"
+                style={{ fontSize: "2.25rem", marginBottom: "0.5rem" }}
+              >
                 Generated Logos
               </h1>
               {loading && !aborting && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6366f1' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    color: "#6366f1",
+                  }}
+                >
                   <FaSpinner className="spinner" />
-                  <span>Generating logos: {generationProgress} of {totalLogos}</span>
+                  <span>
+                    Generating logos: {generationProgress} of {totalLogos}
+                  </span>
                 </div>
               )}
               {aborting && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f97316' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    color: "#f97316",
+                  }}
+                >
                   <FaSpinner className="spinner" />
                   <span>Cancelling generation...</span>
                 </div>
               )}
               {aborted && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    color: "#ef4444",
+                  }}
+                >
                   <FaExclamationTriangle />
-                  <span>Generation cancelled: {logos.length} logos created</span>
+                  <span>
+                    Generation cancelled: {logos.length} logos created
+                  </span>
                 </div>
               )}
               {!loading && !aborted && logos.length > 0 && (
-                <div style={{ color: '#10b981' }}>
+                <div style={{ color: "#10b981" }}>
                   <span>All {logos.length} logos generated successfully</span>
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: "flex", gap: "1rem" }}>
               {loading && !aborting && !abortRequestedRef.current && (
-                <button 
+                <button
                   onClick={handleAbort}
                   className="secondary-button"
-                  style={{ 
-                    padding: '0.75rem 1.5rem',
+                  style={{
+                    padding: "0.75rem 1.5rem",
                   }}
                 >
                   Cancel Generation
                 </button>
               )}
-              <button 
-                onClick={() => navigate('/logo-maker')}
+              <button
+                onClick={() => navigate("/logo-maker")}
                 className="primary-button"
-                style={{ 
-                  padding: '0.75rem 1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
                 }}
               >
                 <FaSyncAlt />
@@ -283,23 +347,23 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div 
+          <div
             ref={gridRef}
-            style={{ 
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '2rem',
-              padding: '0 20px'
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "2rem",
+              padding: "0 20px",
             }}
           >
             {displayLogos.map((logo) => (
-              <div 
+              <div
                 key={logo.id}
-                style={{ 
-                  position: 'relative',
-                  cursor: logo.isPlaceholder ? 'default' : 'pointer',
-                  transition: 'transform 0.3s ease',
-                  transform: logo.isSelected ? 'scale(1.02)' : 'scale(1)'
+                style={{
+                  position: "relative",
+                  cursor: logo.isPlaceholder ? "default" : "pointer",
+                  transition: "transform 0.3s ease",
+                  transform: logo.isSelected ? "scale(1.02)" : "scale(1)",
                 }}
                 onClick={(e) => {
                   if (!logo.isPlaceholder) {
@@ -308,72 +372,83 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <div className={`example-item ${!logo.isPlaceholder ? 'logo-item' : ''}`} style={{ 
-                  padding: '2rem',
-                  textAlign: 'center',
-                  height: '250px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: logo.isPlaceholder ? '#f3f4f6' : '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  boxShadow: logo.isSelected ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}>
+                <div
+                  className={`example-item ${
+                    !logo.isPlaceholder ? "logo-item" : ""
+                  }`}
+                  style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    height: "250px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: logo.isPlaceholder ? "#f3f4f6" : "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "12px",
+                    transition: "all 0.3s ease",
+                    boxShadow: logo.isSelected
+                      ? "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                      : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                >
                   {logo.isPlaceholder ? (
-                    <div style={{ textAlign: 'center' }}>
-                      <FaSpinner style={{ 
-                        fontSize: '3rem', 
-                        color: '#d1d5db',
-                        animation: 'spin 2s linear infinite',
-                        marginBottom: '1rem'
-                      }} />
-                      <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+                    <div style={{ textAlign: "center" }}>
+                      <FaSpinner
+                        style={{
+                          fontSize: "3rem",
+                          color: "#d1d5db",
+                          animation: "spin 2s linear infinite",
+                          marginBottom: "1rem",
+                        }}
+                      />
+                      <p style={{ color: "#9ca3af", fontSize: "0.9rem" }}>
                         {aborting ? "Cancelling..." : "Generating..."}
                       </p>
                     </div>
                   ) : (
-                    <img 
-                      src={logo.path} 
-                      alt={`Generated logo ${logo.id}`} 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '100%',
-                        objectFit: 'contain'
-                      }} 
+                    <img
+                      src={logo.path}
+                      alt={`Generated logo ${logo.id}`}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        objectFit: "contain",
+                      }}
                     />
                   )}
                 </div>
 
-                {(!logo.isPlaceholder && logo.isSelected) && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(59, 130, 246, 0.9)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '1rem',
-                    padding: '1rem',
-                    animation: 'fadeIn 0.2s ease'
-                  }}>
+                {!logo.isPlaceholder && logo.isSelected && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: "rgba(59, 130, 246, 0.9)",
+                      borderRadius: "12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "1rem",
+                      padding: "1rem",
+                      animation: "fadeIn 0.2s ease",
+                    }}
+                  >
                     <button
                       onClick={(e) => handleDownload(e, logo.id)}
                       className="primary-button"
                       style={{
-                        width: '100%',
-                        background: 'white',
-                        color: '#3b82f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem'
+                        width: "100%",
+                        background: "white",
+                        color: "#3b82f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
                       }}
                     >
                       <FaDownload />
@@ -383,13 +458,13 @@ export default function Dashboard() {
                       onClick={(e) => handleSave(e, logo.id)}
                       className="primary-button"
                       style={{
-                        width: '100%',
-                        background: 'white',
-                        color: '#3b82f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem'
+                        width: "100%",
+                        background: "white",
+                        color: "#3b82f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
                       }}
                     >
                       <FaSave />
@@ -404,12 +479,7 @@ export default function Dashboard() {
       </main>
 
       {/* Toast notification */}
-      {toast && (
-        <Toast 
-          message={toast} 
-          onClose={() => setToast(null)} 
-        />
-      )}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
       {/* Add some CSS for the spinner animation */}
       <style>
