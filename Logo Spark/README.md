@@ -38,11 +38,26 @@ A full-stack AI-powered logo generation platform that combines a .NET backend fo
 ### **Architecture Flow**  
 ```mermaid
 graph TD
-  A[React Frontend] -->|Auth/User Data| B[ASP.NET Core]
-  A -->|SSE Logo Stream| C[Python FastAPI]
-  B -->|PostgreSQL| D[(User DB)]
-  C -->|Diffusion Models| E[(AI Service)]
-  B <--> C[Image Metadata Sync]
+  A[React Frontend<br>LogoMaker/Dashboard] -->|JWT Auth<br>User Management| B[ASP.NET Core<br>Auth/Saving Controllers]
+  A -->|SSE Streaming<br>POST/DELETE Requests| C[Python FastAPI<br>Logo Generation Service]
+  B -->|Store User Data<br>Image Metadata| D[(PostgreSQL<br>Users + Images)]
+  C -->|Hugging Face<br>Diffusion Pipeline| E[(AI Model Service<br>openjourney-v4)]
+  B <-->|Sync Image Paths<br>User Context| C
+  C -.->|Local Storage| F[/Images Directory/]
+
+  style A fill:#b3cde3,stroke:#333
+  style B fill:#decbe4,stroke:#333
+  style C fill:#fed9a6,stroke:#333
+  style D fill:#ccebc5,stroke:#333
+  style E fill:#ffffcc,stroke:#333
+  style F fill:#fbb4ae,stroke:#333
+
+  classDef database fill:#ccebc5,stroke:#333
+  classDef ai fill:#ffffcc,stroke:#333
+  classDef storage fill:#fbb4ae,stroke:#333
+  class D database
+  class E ai
+  class F storage
 ```
 
 ---
