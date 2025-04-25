@@ -24,47 +24,15 @@ export default function Dashboard() {
   const [totalLogos, setTotalLogos] = useState(6);
   const [toast, setToast] = useState(null);
   const [aborted, setAborted] = useState(false);
-  const [aborting, setAborting] = useState(false); // New state to track abort in progress
+  const [aborting, setAborting] = useState(false);
   const streamControllerRef = useRef(null);
   const gridRef = useRef(null);
-  const abortRequestedRef = useRef(false); // Ref to track if abortion was requested
+  const abortRequestedRef = useRef(false);
+  const hasInitialized = useRef(false);
 
-  useEffect(() => {
-    // Initialize with the first logo if available
-    if (location.state?.firstLogo) {
-      setLogos([
-        {
-          id: 0,
-          path: location.state.firstLogo,
-          isSelected: false,
-        },
-      ]);
-      setInitializing(false);
-    } else {
-      // If we don't have a first logo, redirect back to logo maker
-      navigate("/logo-maker");
-      return;
-    }
-
-    // Start streaming additional logos if we have a task ID
-    if (location.state?.taskId && location.state?.companyName) {
-      startLogoStream(location.state.taskId, location.state.companyName);
-    } else {
-      setLoading(false);
-    }
-
-    // Cleanup function to abort logo generation when unmounting
-    return () => {
-      if (streamControllerRef.current) {
-        abortRequestedRef.current = true;
-        streamControllerRef.current.abort();
-        streamControllerRef.current = null;
-      }
-    };
-  }, [location.state, navigate]);
-
-  // Function to start the logo streaming process
   const startLogoStream = (taskId, companyName) => {
+    console.log(`Starting logo stream for taskId: ${taskId}, company: ${companyName}`);
+    
     setAborted(false);
     setAborting(false);
     abortRequestedRef.current = false;
@@ -74,86 +42,131 @@ export default function Dashboard() {
       taskId,
       companyName,
       (data) => {
-        if (abortRequestedRef.current) {
-          console.log("Ignoring new logo after abortion was requested");
-          return;
-        }
+        if (abortRequestedRef.current) return;
 
-        // Add new logo
-        setLogos((prevLogos) => [
-          ...prevLogos,
-          {
-            id: data.index + 1,
-            path: data.logo,
-            isSelected: false,
-          },
-        ]);
+        console.log(`Logo ${data.index + 1} received: ${data.logo}`);
 
-        // Update progress
-        setGenerationProgress((prev) => prev + 1);
+        setLogos((prevLogos) => {
+          // Check if this logo already exists in our collection
+          const exists = prevLogos.some(
+            (logo) => Number(logo.id) === Number(data.index)
+          );
+          
+          if (exists) {
+            console.log(`Logo ${data.index} already exists in state, skipping`);
+            return prevLogos;
+          }
 
-        // Show toast notification
+          // Add new logo and sort by ID
+          const newLogos = [
+            ...prevLogos,
+            {
+              id: data.index,
+              path: data.logo,
+              isSelected: false,
+            },
+          ].sort((a, b) => a.id - b.id);
+
+          console.log(`Updated logos state: ${newLogos.length} items`);
+          return newLogos;
+        });
+
+        setGenerationProgress(data.index + 2); 
         setToast(`Logo ${data.index + 1} generated successfully!`);
       },
-      // On complete
       () => {
+        console.log("Logo generation complete!");
         setLoading(false);
         setAborting(false);
         setToast("All logos have been generated!");
       },
-      // On error
       (error) => {
         console.error("Error streaming logos:", error);
         setLoading(false);
         setAborting(false);
         setToast(`Error generating logos: ${error.message}`);
       },
-      // On abort
       (abortData) => {
         console.log("Generation aborted:", abortData);
         setLoading(false);
         setAborted(true);
         setAborting(false);
-        setTotalLogos(Math.max(logos.length, abortData.total_generated + 1));
+        setTotalLogos((prev) => Math.max(prev, abortData.total_generated + 1));
         setToast("Logo generation was cancelled");
       }
     );
   };
 
-  // Function to handle abortion
   const handleAbort = () => {
     if (streamControllerRef.current && !abortRequestedRef.current) {
+      console.log("User requested abort");
       abortRequestedRef.current = true;
       setAborting(true);
       setToast("Cancelling generation...");
-      streamControllerRef.current.abort(); // Request abortion
+
+      if (typeof streamControllerRef.current.abort === "function") {
+        streamControllerRef.current.abort();
+      } else {
+        console.error("Stream controller doesn't have an abort method");
+        setAborting(false);
+        setToast("Failed to cancel generation");
+      }
     }
   };
 
-  useEffect(() => {
-    // Add event listener to handle clicks outside of logos
-    const handleClickOutside = (event) => {
-      if (
-        gridRef.current &&
-        gridRef.current.contains(event.target) &&
-        event.target === gridRef.current
-      ) {
-        // Close all menus
-        setLogos((prevLogos) =>
-          prevLogos.map((logo) => ({
-            ...logo,
-            isSelected: false,
-          }))
-        );
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
+useEffect(() => {
+    // Handle redirecting if we don't have logo data
+    if (!location.state?.firstLogo) {
+      navigate("/logo-maker");
+      return;
+    }
+    
+    console.log("Dashboard mounting effect running");
+    
+    // Initialize with first logo
+    if (!hasInitialized.current) {
+      console.log("Initializing with first logo");
+      hasInitialized.current = true;
+      setLogos([{ id: 0, path: location.state.firstLogo, isSelected: false }]);
+      setInitializing(false);
+    }
+    
+    // Start streaming if we have the required data
+    if (location.state?.taskId && location.state?.companyName && !streamControllerRef.current) {
+      console.log("Starting logo stream for first time");
+      startLogoStream(location.state.taskId, location.state.companyName);
+    } else if (!streamControllerRef.current) {
+      setLoading(false);
+    }
+    
+    // Store that we're mounted in session storage to track across remounts
+    sessionStorage.setItem('dashboardMounted', 'true');
+    
+    // Only actually abort on navigation away, not on remount
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      console.log("Dashboard unmounting");
+      
+      queueMicrotask(() => {
+        // If we're truly navigating away, dashboardMounted will be cleared
+        if (sessionStorage.getItem('dashboardMounted') === 'true') {
+          // We're still on the dashboard, then this was just a development-time remount
+          console.log("Just a remount, not aborting");
+          // Re-set the mounted flag for future checks
+          sessionStorage.setItem('dashboardMounted', 'true');
+        } else {
+          // We're actually navigating away, so clean up
+          console.log("Actual navigation away, cleaning up and aborting");
+          abortRequestedRef.current = true;
+          if (streamControllerRef.current?.abort) {
+            streamControllerRef.current.abort();
+          }
+          streamControllerRef.current = null;
+        }
+      });
+      
+      sessionStorage.removeItem('dashboardMounted');
     };
-  }, []);
+  }, [location.state, navigate]);
 
   const handleLogoClick = (id) => {
     setLogos(
@@ -173,8 +186,9 @@ export default function Dashboard() {
 
     // Create a temporary link element
     const link = document.createElement("a");
-    link.href = logo.path;
-    link.download = `logo_${id}.png`;
+    link.href = `http://localhost:5080${logo.path}`; 
+    var fileType = alert("Select file type (jpg, png): ");
+    link.download = `logo-${id}.${fileType}`; // Set the file name and type
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -195,15 +209,15 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await fetch("/api/saving/save-image", {
+      const response = await fetch("http://localhost:5001/api/saving/save-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          ImagePath: logo.path,
-          Name: name,
+            ImagePath: logo.path.replace("http://localhost:5080", ""), 
+            Name: name,
         }),
       });
 
@@ -215,7 +229,6 @@ export default function Dashboard() {
   };
 
   // Calculate the number of placeholders to show
-  // Only create placeholders if generation is still in progress (loading) and not aborted
   const getPlaceholderCount = () => {
     if (aborted || !loading) {
       return 0; // No placeholders if aborted or loading completed
@@ -408,7 +421,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <img
-                      src={logo.path}
+                      src={`http://localhost:5080${logo.path}`}
                       alt={`Generated logo ${logo.id}`}
                       style={{
                         maxWidth: "100%",
@@ -478,10 +491,9 @@ export default function Dashboard() {
         </section>
       </main>
 
-      {/* Toast notification */}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      {/* Add some CSS for the spinner animation */}
+      {/* Spinner animation */}
       <style>
         {`
           @keyframes spin {

@@ -17,7 +17,7 @@ namespace LogoSpark.Models
         {
             base.OnModelCreating(builder);
 
-            // Make email optional (Not required for registration)
+            // Make email optional (Not required for registration in this application)
             builder.Entity<ApplicationUser>(entity =>
             {
                 entity.Property(u => u.Email).IsRequired(false);

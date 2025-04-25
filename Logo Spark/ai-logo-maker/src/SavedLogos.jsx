@@ -2,35 +2,56 @@ import { useState, useEffect } from 'react';
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import {
-  FaTrash, FaDownload, FaSave, FaCoffee,
-  FaRocket, FaLeaf, FaGem, FaDragon,
-  FaFeather, FaApple, FaAndroid
+  FaTrash, FaDownload
 } from 'react-icons/fa';
 import "./LandingPage.css";
 
 export default function SavedLogos() {
   const [logos, setLogos] = useState([]);
   const [selectedLogo, setSelectedLogo] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogoClick = (id) => {
     setSelectedLogo(selectedLogo === id ? null : id);
   };
 
-  const handleRemove = (id) => {
-    setLogos(logos.filter(logo => logo.id !== id));
-    setSelectedLogo(null);
+  const handleRemove = async (id) => {
+    try {
+      setIsDeleting(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/saving/remove-image/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        // Remove the logo from state and clear the selected logo
+        setLogos(logos.filter(logo => logo.id !== id));
+        setSelectedLogo(null);
+      } else {
+        // Handle error response from the API
+        const error = await response.json();
+        console.error('Error removing logo:', error);
+        alert('Failed to remove logo. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while removing the logo.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDownload = (id) => {
     console.log('Downloading logo', id);
     setSelectedLogo(null);
-  };
+  };     
 
   useEffect(() => {
     const fetchLogos = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/saving/saved-images', {
+        const response = await fetch('http://localhost:5001/api/saving/saved-images', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -116,7 +137,10 @@ export default function SavedLogos() {
                       Download
                     </button>
                     <button
-                      onClick={() => handleRemove(logo.id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the logo click event
+                        handleRemove(logo.id);
+                      }}
                       className="primary-button"
                       style={{
                         width: '100%',
@@ -126,9 +150,10 @@ export default function SavedLogos() {
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}
+                      disabled={isDeleting}
                     >
                       <FaTrash />
-                      Remove
+                      {isDeleting ? 'Removing...' : 'Remove'}
                     </button>
                   </div>
                 )}

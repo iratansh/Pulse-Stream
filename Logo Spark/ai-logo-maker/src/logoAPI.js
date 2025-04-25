@@ -1,154 +1,122 @@
-// logoAPI.js (Client Side)
+// This is an implementation of SSE for logo generation
 
-// Bugs : The first logo isn't being displayed, all logos are being displayed after generation is completed instead of streaming
-
-/**
- * Generates the first logo and returns the initial data
- * @param {string} companyName - The company name to generate logos for
- * @returns {Promise<Object>} - The response with first logo and task ID
- */
-export async function generateFirstLogo(companyName) {
-    try {
-      const response = await fetch('http://localhost:5080/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uInput: companyName }), 
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating first logo:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Streams additional logos, calling the callback for each new logo
-   * @param {string} taskId - The task ID from the initial logo generation
-   * @param {string} companyName - The company name
-   * @param {Function} onLogoGenerated - Callback called when each new logo is generated
-   * @param {Function} onComplete - Callback called when all logos are generated
-   * @param {Function} onError - Callback called on error
-   * @param {Function} onAbort - Callback called when generation is aborted
-   * @returns {Object} - The controller object with abort method
-   */
-  export function streamLogos(taskId, companyName, onLogoGenerated, onComplete, onError, onAbort) {
-    // Create a controller object
-    const controller = {
-      isActive: true,
-      eventSource: null,
+export function streamLogos(taskId, companyName, onLogoGenerated, onComplete, onError, onAbort) {
+    // EventSource controller
+    let abortSent = false;
+    
+    const controller = { 
+      isActive: true, 
+      userInitiatedAbort: false, 
+      eventSource: null, 
       abort: async () => {
-        console.log('Aborting logo generation...');
-        controller.isActive = false;
-        if (controller.eventSource) {
-          controller.eventSource.close();
+        // Prevent multiple aborts for the same task
+        if (abortSent) {
+          console.log('Abort already sent for this task, ignoring duplicate request');
+          return;
         }
         
-        // Send abort request to server and get the response
+        abortSent = true;
+        console.log('Abort requested for task:', taskId);
+        controller.userInitiatedAbort = true;
+        controller.isActive = false;
+        
         try {
-          const response = await fetch(`http://localhost:5080/api/abort-generation/${taskId}`, {
-            method: 'DELETE'
+          // Close the event source before sending the abort request
+          if (controller.eventSource) {
+            console.log('Closing event source before abort request');
+            controller.eventSource.close();
+            controller.eventSource = null;
+          }
+          
+          console.log(`Sending abort request to server for task ${taskId}`);
+          const res = await fetch(`http://localhost:5080/api/abort-generation/${taskId}`, { 
+            method: 'DELETE' 
           });
           
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
+          if (!res.ok) throw new Error(`Server returned ${res.status}`);
           
-          const data = await response.json();
+          const data = await res.json();
           console.log('Abort response:', data);
-          
-          // Call the onAbort callback with the server's response data
-          if (onAbort && data.status === "success") {
-            onAbort(data);
-          }
+          if (onAbort && data.status === 'success') onAbort(data);
         } catch (err) {
-          console.error('Error aborting generation:', err);
-          // Still call onAbort with an error
-          if (onAbort) {
-            onAbort({ status: "aborted", message: "Generation aborted with errors", total_generated: 0 });
-          }
+          console.error('Error during abort:', err);
+          if (onAbort) onAbort({ 
+            status: 'aborted', 
+            message: err.message, 
+            total_generated: 0 
+          });
         }
       }
     };
+  
+    // Open SSE connection
+    const url = `http://localhost:5080/api/stream-logos/${taskId}?company_name=${encodeURIComponent(companyName)}`;
+    console.log(`Opening EventSource connection to: ${url}`);
+    controller.eventSource = new EventSource(url);
+  
+    controller.eventSource.onopen = () => console.log('SSE connection opened for task:', taskId);
     
-    // Create and assign the EventSource for streaming
-    controller.eventSource = new EventSource(
-      `http://localhost:5080/api/stream-logos/${taskId}?company_name=${encodeURIComponent(companyName)}`
-    );
-    
-    // Handle incoming messages
+    controller.eventSource.onerror = (err) => {
+      console.error('SSE error for task:', taskId, err);
+      if (controller.isActive) {
+        controller.isActive = false;
+        if (controller.eventSource) {
+          controller.eventSource.close();
+          controller.eventSource = null;
+        }
+        if (!controller.userInitiatedAbort && onError) {
+          onError(new Error('Stream connection failed'));
+        }
+      }
+    };
+  
     controller.eventSource.onmessage = (event) => {
-      // If controller is no longer active, ignore messages
       if (!controller.isActive) return;
       
       try {
         const data = JSON.parse(event.data);
+        console.log('Received logo data:', data);
         
-        if (data.status === "success") {
-          // Call the logo generated callback
-          onLogoGenerated(data);
-          
-          // If this is the last logo, close the stream and call completion callback
-          if (data.is_last) {
-            controller.eventSource.close();
-            controller.isActive = false;
-            if (onComplete) onComplete();
-          }
-        } else if (data.status === "aborted") {
-          // Handle aborted generation
-          console.log("Logo generation was aborted by the server", data);
-          controller.eventSource.close();
-          controller.isActive = false;
-          if (onAbort) onAbort(data);
-        } else if (data.status === "error") {
-          console.error('Error in logo generation:', data.message);
-          controller.eventSource.close();
-          controller.isActive = false;
-          if (onError) onError(new Error(data.message));
+        // Convert index to number if it exists
+        if (data.index !== undefined) {
+          data.index = Number(data.index);
         }
-      } catch (error) {
-        console.error('Error parsing stream data:', error);
-        controller.eventSource.close();
-        controller.isActive = false;
-        if (onError) onError(error);
+        
+        if (data.status === 'success' && data.logo) {
+          onLogoGenerated(data);
+        } else if (data.status === 'aborted') {
+          if (controller.eventSource) {
+            controller.eventSource.close();
+            controller.eventSource = null;
+          }
+          if (onAbort && !controller.userInitiatedAbort) {
+            onAbort(data);
+          }
+        } else if (data.status === 'error') {
+          if (controller.eventSource) {
+            controller.eventSource.close();
+            controller.eventSource = null;
+          }
+          if (onError) {
+            onError(new Error(data.message));
+          }
+        }
+      } catch (err) {
+        console.error('Error processing event data:', err);
+        if (onError) onError(err);
       }
     };
-    
-    // Handle errors
-    controller.eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      controller.eventSource.close();
-      controller.isActive = false;
-      if (onError) onError(error);
-    };
-    
-    return controller;
-  }
   
-  /**
-   * Aborts an ongoing logo generation task
-   * @param {string} taskId - The task ID to abort
-   * @returns {Promise<Object>} - The server response
-   */
-  export async function abortGeneration(taskId) {
-    try {
-      const response = await fetch(`http://localhost:5080/api/abort-generation/${taskId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+    // Handle done event
+    controller.eventSource.addEventListener('done', () => {
+      console.log('Done event received, closing connection');
+      if (controller.eventSource) {
+        controller.eventSource.close();
+        controller.eventSource = null;
+        controller.isActive = false;
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error aborting generation:', error);
-      throw error;
-    }
-  }
+      if (onComplete) onComplete();
+    });
+  
+    return controller;
+}
