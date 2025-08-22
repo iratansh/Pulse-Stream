@@ -1,0 +1,39 @@
+name: pulse-stream
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  # Web framework
+  - flask
+  - flask-cors
+  # Config & validation
+  - python-dotenv
+  - pydantic
+  # HTTP & utils
+  - requests
+  # WSGI server (prod)
+  - gunicorn
+  # Testing & dev tools
+  - pytest
+  - pytest-cov
+  - black
+  - isort
+  - mypy
+  - pre-commit
+  # Optional: PostgreSQL client via conda (psycopg2)
+  - psycopg2
+  - openssl
+  - ca-certificates
+  - certifi
+  - setuptools
+  - wheel
+  - pip:
+      # Supabase Python client
+      - supabase>=2.6.0
+      # Modern PostgreSQL driver (psycopg3 binary wheels)
+      - psycopg[binary]>=3.1
+      # Migrations (if you choose SQLAlchemy later)
+      - alembic>=1.13
+      - sqlalchemy>=2.0
