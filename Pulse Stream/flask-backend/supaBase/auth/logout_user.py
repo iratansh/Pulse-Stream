@@ -1,4 +1,4 @@
-import supabase
+from .. import supabase
 
 def logout_user():
     """

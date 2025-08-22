@@ -16,7 +16,7 @@ def login():
         response = login_user(email_name, password)
         if "error" in response:
             return jsonify({"error": response["error"]}), 400
-        return jsonify({"user": response["user"], "session": response["session"]}), 200
+        return jsonify({"success": response["success"], "session": response["session"]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -32,7 +32,7 @@ def register():
         response = register_user(email, password, first_name)
         if "error" in response:
             return jsonify({"error": response["error"]}), 400
-        return jsonify({"user": response["user"], "session": response["session"]}), 200
+        return jsonify({"success": response["success"], "session": response["session"]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
