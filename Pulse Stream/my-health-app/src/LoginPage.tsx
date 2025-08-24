@@ -32,12 +32,12 @@ export default function LoginPage() {
 
     // Validate name for registration
     if (!isLogin && !formData.name.trim()) {
-      newErrors.name = "Full name is required";
+      newErrors.name = "First name is required";
       isValid = false;
     }
 
     if (!formData.email) {
-      newErrors.email = "email is required";
+      newErrors.email = "Email is required";
       isValid = false;
     }
 
@@ -67,31 +67,65 @@ export default function LoginPage() {
     if (!validateForm()) {
       return;
     }
-
-    try {
-      const response = await fetch("http://localhost:3000/api/auth", {
+    
+    if (!isLogin) {
+      console.log("Registering new user");
+      try {
+          const response = await fetch("http://127.0.0.1:5000/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(
+          {
+            email: formData.email,
+            password: formData.password,
+            first_name: formData.name,
+          }
+        ),
       });
-
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/dashboard"); // Redirect to dashboard on success
+        localStorage.setItem("session", JSON.stringify(data.session));
+        localStorage.setItem("user", JSON.stringify(data.success));
+        navigate("/dashboard"); // TODO: Implement dashboard
       } else {
         const errorData = await response.json();
         setApiError(
-          errorData.message || "An error occurred. Please try again."
+          errorData.error || "An error occurred. Please try again."
         );
       }
     } catch (error) {
       console.error("Error:", error);
       setApiError("An error occurred. Please try again.");
     }
+   } else {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem("session", data.session);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          navigate("/dashboard"); // TODO: Implement dashboard
+
+        } else {
+          const errorData = await response.json();
+          setApiError(
+            errorData.message || "An error occurred. Please try again."
+          );
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setApiError("An error occurred. Please try again.");
+      }
+    }
+    
   };
 
   return (
@@ -187,7 +221,7 @@ export default function LoginPage() {
                       color: "#64748b",
                     }}
                   >
-                    Full Name
+                    First Name
                   </label>
                   <div style={{ position: "relative" }}>
                     <FaUser
@@ -260,7 +294,7 @@ export default function LoginPage() {
                       borderRadius: "8px",
                       fontSize: "1rem",
                     }}
-                    placeholder="jsmith@gmail.com"
+                    placeholder="email@example.com"
                   />
                 </div>
                 {errors.email && (
